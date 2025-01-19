@@ -27,7 +27,7 @@ class BookList(APIView):
 
 
 class BookDetail(APIView):
-    """Operaciones CRUD en un libro específico."""
+    """Operaciones CRUD en un libro específico"""
 
     def get(self, request, book_id):
         """Obtener un libro por su ID."""
@@ -38,7 +38,7 @@ class BookDetail(APIView):
         return Response({"error": "Book not found"}, status=404)
 
     def put(self, request, book_id):
-        """Actualizar completamente un libro por su ID."""
+        """Actualizar completamente un libro por su ID"""
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():
             result = collection.update_one(
@@ -51,7 +51,7 @@ class BookDetail(APIView):
         return Response(serializer.errors, status=400)
 
     def patch(self, request, book_id):
-        """Actualizar parcialmente un libro por su ID."""
+        """Actualizar parcialmente un libro por su ID"""
         data = request.data
         result = collection.update_one(
             {"_id": ObjectId(book_id)}, {"$set": data}
@@ -61,8 +61,49 @@ class BookDetail(APIView):
         return Response({"message": "No changes made"}, status=200)
 
     def delete(self, request, book_id):
-        """Eliminar un libro por su ID."""
+        """Eliminar un libro por su ID"""
         result = collection.delete_one({"_id": ObjectId(book_id)})
         if result.deleted_count > 0:
             return Response({"message": "Book deleted successfully"}, status=200)
         return Response({"error": "Book not found"}, status=404)
+    
+
+class AveragePriceByYear(APIView):
+    """Obtener el precio promedio x año específico"""
+
+    def get(self, request, year):
+        """Calcula el precio promedio de los libros publicados en el año dado"""
+        try:
+            year = int(year)  # Convertir en estero el año
+            pipeline = [
+                {
+                    "$match": {
+                        "published_date": {
+                            "$gte": f"{year}-01-01",
+                            "$lt": f"{year+1}-01-01"
+                        }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": None,  # No se requiere agrupar por ningún campo en específico
+                        "average_price": {"$avg": "$price"}
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,  # se oculta el campo _id
+                        "year": year,
+                        "average_price": {"$round": ["$average_price", 2]}  # Redondear a 2 decimales
+                    }
+                }
+            ]
+
+            result = list(collection.aggregate(pipeline))
+
+            if not result:
+                return Response({"message": f"No books found for year {year}"}, status=404)
+            return Response(result[0], status=200)
+
+        except ValueError:
+            return Response({"error": "Invalid year format. Must be an integer."}, status=400)
