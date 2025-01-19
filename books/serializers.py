@@ -1,0 +1,9 @@
+from rest_framework import serializers
+from datetime import datetime, date
+
+class BookSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200)
+    author = serializers.CharField(max_length=100)
+    published_date = serializers.DateField()
+    genre = serializers.CharField(max_length=100)
+    price = serializers.FloatField()
