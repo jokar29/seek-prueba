@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .serializers import BookSerializer
 from datetime import datetime
 from bson import ObjectId
+from rest_framework.pagination import PageNumberPagination
 
 # Conexión a MongoDB
 try:
@@ -13,11 +14,14 @@ try:
 except Exception as ex:
     print("error de conexion: {}".format(ex))
 
-class BookList(APIView):
+class BookList(APIView, PageNumberPagination):
+    page_size = 5  
     def get(self, request):
         books = list(collection.find({}))  # Obtener todos los libros
-        serializer = BookSerializer(books, many=True)  # Serializa la lista de libros
-        return Response(serializer.data)
+        paginated_books = self.paginate_queryset(books, request, view=self)
+        serializer = BookSerializer(paginated_books, many=True)  # Serializa la lista de libros
+        
+        return self.get_paginated_response(serializer.data)
     
     def post(self, request):
         # Agregar libros a la colección 'books'

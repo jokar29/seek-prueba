@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from datetime import datetime, date
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["book_db"]
