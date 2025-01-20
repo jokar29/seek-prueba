@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from datetime import datetime, date
 
 class BookSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200)
